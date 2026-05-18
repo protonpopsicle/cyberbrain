@@ -5,7 +5,20 @@ description: Personal task tracking organized by strategic work threads. Add, up
 
 # Cyberbrain – Personal Work Thread & Task Tracker
 
-Manage the user's personal task list in `~/cyberbrain-link/threads.md` and reference notes in `~/cyberbrain-link/notes/`. The repo is git-tracked; commit and push after every change.
+Manage the user's personal task list and reference notes. Tasks live in `threads.md` and notes in `notes/` within the user's data directory.
+
+## Configuration
+
+Read `~/.config/cyberbrain` to get the data directory path. The file contains a single line: the absolute path to the directory containing `threads.md` and `notes/`.
+
+If the file does not exist, ask the user where their cyberbrain data is stored, then create the config file.
+
+Example config:
+```
+/Users/alice/cyberbrain-link
+```
+
+Throughout these instructions, `$DATA_DIR` refers to the path read from this config file.
 
 ## File Format
 
@@ -48,7 +61,7 @@ Read the file before making changes. Match tasks/threads by substring or close w
 
 ## Notes Directory
 
-The `~/cyberbrain-link/notes/` folder stores work-relevant reference docs (meeting notes, research, analysis). When the user asks to save a note:
+The `$DATA_DIR/notes/` folder stores reference docs (meeting notes, research, analysis). When the user asks to save a note:
 
 1. Write a Markdown file to `notes/` with a descriptive kebab-case filename.
 2. Link it from the relevant task: `- See: [Note Title](./notes/filename.md)`
@@ -78,12 +91,14 @@ Use this format when summarizing:
 - Scoping: all threads, one thread, or open-only — based on what the user asks.
 - End with count line: `N threads · N open · N completed`.
 
-## Git
+## Persistence
 
-After every change, commit and push:
+After every change, persist the data. If `$DATA_DIR` is a git repository, commit and push:
 
 ```bash
-cd ~/cyberbrain-link && git add -A && git commit -m "<short description>" && git push
+cd $DATA_DIR && git add -A && git commit -m "<short description>" && git push
 ```
 
 Use brief commit messages (e.g., "Add task: review API gateway design"). If `threads.md` doesn't exist, create it with `# Work Threads` and commit as "Initialize work threads".
+
+If `$DATA_DIR` is not a git repository, simply save the file (no commit/push needed).
