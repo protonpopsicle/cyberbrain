@@ -44,7 +44,7 @@ Summary: One-line description of this strategic area.
 - **Context notes**: Indented two spaces, no checkbox — for links, references, or annotations.
 - **Links**: Use `[display text](url)` for URLs and local file references so they render clickable. Raw URLs are fine if short (under ~60 chars).
 - **Completing**: Change `- [ ]` to `- [x]` and append ` ✓ YYYY-MM-DD`. Complete child sub-tasks too.
-- **Ordering**: Preserve user's order. New threads append at bottom. Completed tasks stay in place.
+- **Ordering**: Preserve user's order. New threads append at bottom. Completed tasks stay in place (until archived).
 - **Style**: Task descriptions start with a capital letter. Dates use `YYYY-MM-DD`.
 
 ## Operations
@@ -57,7 +57,54 @@ Read the file before making changes. Match tasks/threads by substring or close w
 - **Remove** a task and its children — only when explicitly asked.
 - **Reorder** tasks or threads when asked.
 - **Summarize** as a tree view (see below).
+- **Archive** completed tasks: move completed tasks older than 14 days to `archive.md`. See Archive section below.
 - **Default** (no specific request): show full tree view.
+
+## Archive
+
+The archive (`$DATA_DIR/archive.md`) stores completed tasks pruned from `threads.md`. It is organized chronologically by completion month — not by thread — since chronology is more useful for reflection.
+
+### Archive File Format
+
+```markdown
+# Archive
+
+## 2026-05
+
+- [x] Review API gateway design ✓ 2026-05-11 (Thread: Platform Migration)
+  - [x] Check rate limiting config ✓ 2026-05-10
+- [x] Write onboarding doc ✓ 2026-05-08 (Thread: Team Enablement)
+
+## 2026-04
+
+- [x] Set up CI pipeline ✓ 2026-04-22 (Thread: Platform Migration)
+```
+
+### Archive Rules
+
+- **Trigger**: User asks to archive (e.g., "archive", "prune", "clean up completed tasks").
+- **Threshold**: Only completed tasks (`- [x]`) with a completion date older than 14 days are archived. Recent completions stay in `threads.md` for context.
+- **Grouping**: Archived tasks are grouped under `## YYYY-MM` headings (the month of completion).
+- **Thread tag**: Append ` (Thread: <thread name>)` to each top-level archived task so its origin is preserved as metadata.
+- **Sub-tasks and context notes**: Move together with their parent task, preserving indentation.
+- **Month sections**: Insert new month headings in reverse chronological order (newest first). Append tasks within a month section in the order they are processed.
+- **Partial completion**: A parent task with a mix of completed and open sub-tasks is NOT archived. Only fully completed tasks (parent `[x]` with all sub-tasks `[x]`) are eligible.
+- **Empty threads**: If archiving removes all items from a thread, leave the thread heading and summary in `threads.md` (the user can remove it manually).
+- **Initialization**: If `archive.md` doesn't exist, create it with `# Archive\n` before appending.
+
+### Archive Procedure
+
+1. Read `threads.md`. Identify all top-level `- [x]` tasks with completion dates older than 14 days from today.
+2. Read (or create) `archive.md`.
+3. For each eligible task, determine its completion month (`YYYY-MM`) and thread name.
+4. Append the task (with sub-tasks/context notes) under the appropriate month heading in `archive.md`.
+5. Remove the task (and its children) from `threads.md`.
+6. Write both files.
+7. Commit: `"Archive N completed tasks"`.
+
+### Viewing the Archive
+
+When the user asks to see archived/completed tasks (e.g., "what did I do last month?", "show archive"), read `archive.md` and present it using the tree view format, scoped by time or thread as requested.
 
 ## Notes Directory
 
