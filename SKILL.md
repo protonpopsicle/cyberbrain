@@ -47,6 +47,23 @@ Summary: One-line description of this strategic area.
 - **Ordering**: Preserve user's order. New threads append at bottom. Completed tasks stay in place (until archived).
 - **Style**: Task descriptions start with a capital letter. Dates use `YYYY-MM-DD`.
 
+## Scripts
+
+Helper scripts live in the skill directory under `scripts/`. Use these for read-only and deterministic operations to avoid unnecessary file parsing:
+
+```bash
+# Recent wins table (completed in last 14 days)
+./scripts/recent-wins.sh [days]
+
+# Tree view summary
+./scripts/summary.sh [--thread "Name"] [--open-only]
+
+# Archive completed tasks (or preview with --dry-run)
+./scripts/archive.sh [--dry-run]
+```
+
+Prefer scripts over manual file reading for **summarize**, **recent wins**, and **archive** operations.
+
 ## Operations
 
 Read the file before making changes. Match tasks/threads by substring or close wording.
@@ -56,9 +73,10 @@ Read the file before making changes. Match tasks/threads by substring or close w
 - **Update** a task's description, preserving checkbox state and completion date.
 - **Remove** a task and its children — only when explicitly asked.
 - **Reorder** tasks or threads when asked.
-- **Summarize** as a tree view (see below).
-- **Archive** completed tasks: move completed tasks older than 14 days to `archive.md`. See Archive section below.
-- **Default** (no specific request): show full tree view.
+- **Summarize**: run `./scripts/summary.sh` and relay output. Use `--open-only` or `--thread` flags as needed.
+- **Archive**: run `./scripts/archive.sh`. Use `--dry-run` first if confirming with user.
+- **Recent wins**: run `./scripts/recent-wins.sh` and relay the table output.
+- **Default** (no specific request): run `./scripts/summary.sh` and relay output.
 
 ## Archive
 
