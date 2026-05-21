@@ -111,10 +111,10 @@ When the user asks to see archived/completed tasks (e.g., "what did I do last mo
 When the user asks for "recent wins", "recent completions", or "what did I finish lately", show all completed tasks that are *inside* the 14-day archive window (i.e., completed within the last 14 days) as a Markdown table:
 
 ```
-| Task | Thread | Completed | Days ago |
-|------|--------|-----------|----------|
-| Complete MFA setup | Compliance | 2026-05-12 | 9 |
-| Replace Copilot workflows (sub-task) | Learning | 2026-05-11 | 10 |
+| Task | Thread | Days ago |
+|------|--------|----------|
+| Complete MFA setup | Compliance | 9 |
+| Replace Copilot workflows (sub-task) | Learning | 10 |
 ```
 
 **Rules:**
