@@ -6,7 +6,7 @@ A [Pi](https://github.com/mariozechner/pi) coding agent skill for personal task 
 
 Cyberbrain turns a simple Markdown file into a personal task system driven by natural language. You talk to the agent; it manages the file.
 
-- **Threads** — Group tasks under strategic areas of focus (e.g., "Billing", "Compliance")
+- **Threads** — Group tasks under strategic areas of focus (e.g., "Home", "Career", "Side Project")
 - **Tasks & sub-tasks** — Checkbox items with one level of nesting
 - **Context notes** — Links, references, and annotations attached to tasks
 - **Completion tracking** — Tasks are marked done with a date (`✓ 2026-05-21`)
@@ -57,11 +57,12 @@ Talk to Pi naturally. The skill activates when it recognizes task-management int
 ### Managing Tasks
 
 ```
-"Add a task under Billing: review API design"
-"Add a sub-task to the collections task: check rate limiting"
-"Complete the MFA task"
-"Remove the old onboarding task"
-"Reorder Compliance tasks — put the career profile first"
+"Add a thread called Meal Planning"
+"Add a task under Home: research best baby monitors"
+"Add a sub-task to the grocery task: pick up oat milk"
+"Complete the dentist appointment task"
+"Remove the old gym signup task"
+"Reorder Career tasks — put the resume update first"
 ```
 
 ### Viewing Tasks
@@ -69,7 +70,7 @@ Talk to Pi naturally. The skill activates when it recognizes task-management int
 ```
 "Show my threads"              → full tree view
 "Show open tasks only"         → tree view, open items only
-"Show the Billing thread"      → scoped to one thread
+"Show the Home thread"         → scoped to one thread
 "Recent wins"                  → table of completions in the last 14 days
 ```
 
@@ -84,8 +85,8 @@ Talk to Pi naturally. The skill activates when it recognizes task-management int
 ### Notes
 
 ```
-"Save a note about the architecture review"  → writes to notes/, links from task
-"What's in the billing arch review note?"    → reads linked note file
+"Save a note about the baby monitor research"  → writes to notes/, links from task
+"What's in my meal prep note?"                 → reads linked note file
 ```
 
 ## Recommended Models
@@ -99,13 +100,6 @@ This skill performs structured Markdown editing — not creative reasoning. Lowe
 | Claude Haiku 4 | Risky | May misparse edge cases in archive or complex edits. |
 | **GPT-4o** | ✅ Good | Comparable to Sonnet for structured file editing. |
 | GPT-4o-mini | Risky | Fine for simple add/complete, fragile for archive. |
-
-**Cost comparison** (approximate, per interaction):
-
-| Setup | Cost per interaction |
-|-------|---------------------|
-| Opus, no scripts | ~$0.05–0.10 |
-| **Sonnet + scripts** | **~$0.005–0.01** |
 
 The included helper scripts (`scripts/`) handle read-only operations (summary, recent wins, archive) so the LLM doesn't need to parse and reformat the file — it just runs a script and relays the output.
 
@@ -125,14 +119,6 @@ The included helper scripts (`scripts/`) handle read-only operations (summary, r
     threads.md                   ← active tasks
     archive.md                   ← completed tasks (auto-generated)
     notes/                       ← reference documents
-```
-
-## Running Tests
-
-Tests are local-only (gitignored) and exercise all three scripts:
-
-```bash
-./tests/test-cyberbrain.sh
 ```
 
 ## License
