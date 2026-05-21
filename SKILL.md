@@ -1,6 +1,6 @@
 ---
 name: cyberbrain
-description: Personal task tracking organized by strategic work threads. Add, update, complete, and summarize tasks in a simple Markdown file. Tasks are grouped under threads (strategic areas of focus). Supports sub-tasks one level deep.
+description: Personal task tracking organized by strategic work threads. Add, update, complete, archive, and summarize tasks in a simple Markdown file. Tasks are grouped under threads (strategic areas of focus). Supports sub-tasks, archiving completed work, and recent wins view.
 ---
 
 # Cyberbrain – Personal Work Thread & Task Tracker
@@ -89,6 +89,7 @@ The archive (`$DATA_DIR/archive.md`) stores completed tasks pruned from `threads
 - **Sub-tasks and context notes**: Move together with their parent task, preserving indentation.
 - **Month sections**: Insert new month headings in reverse chronological order (newest first). Append tasks within a month section in the order they are processed.
 - **Partial completion**: A parent task with a mix of completed and open sub-tasks is NOT archived. Only fully completed tasks (parent `[x]` with all sub-tasks `[x]`) are eligible.
+- **Missing dates**: Tasks marked `[x]` without a `✓ YYYY-MM-DD` completion date are ineligible for archiving (skip them).
 - **Empty threads**: If archiving removes all items from a thread, leave the thread heading and summary in `threads.md` (the user can remove it manually).
 - **Initialization**: If `archive.md` doesn't exist, create it with `# Archive\n` before appending.
 
@@ -168,4 +169,8 @@ cd $DATA_DIR && git add -A && git commit -m "<short description>" && git push
 
 Use brief commit messages (e.g., "Add task: review API gateway design"). If `threads.md` doesn't exist, create it with `# Work Threads` and commit as "Initialize work threads".
 
+If `git push` fails (network, auth), consider the operation successful — data is committed locally. Do not retry or block on push failures.
+
 If `$DATA_DIR` is not a git repository, simply save the file (no commit/push needed).
+
+If the configured path doesn't exist or `threads.md` is missing, inform the user and offer to initialize.
