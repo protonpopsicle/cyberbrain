@@ -113,12 +113,14 @@ When the user asks for "recent wins", "recent completions", or "what did I finis
 ```
 | Task | Thread | Completed | Days ago |
 |------|--------|-----------|----------|
-| Complete MFA setup for Mac | Compliance | 2026-05-12 | 9 |
-| Replace Copilot workflows with Pi | Learning | 2026-05-11 | 10 |
+| Complete MFA setup | Compliance | 2026-05-12 | 9 |
+| Replace Copilot workflows (sub-task) | Learning | 2026-05-11 | 10 |
 ```
 
 **Rules:**
-- Include both top-level tasks and sub-tasks (sub-tasks shown with their own description, not the parent's).
+- Include both top-level tasks and sub-tasks.
+- **Shorten task names**: Trim to the essential description — drop dates, email addresses, parenthetical details, and "Guarantee:" prefixes. Keep it recognizable but concise.
+- **Mark sub-tasks**: Append ` (sub-task)` to sub-task descriptions so they're distinguishable from top-level tasks.
 - Sort by completion date descending (most recent first).
 - "Thread" column shows the `##` heading the task lives under.
 - "Days ago" is relative to today.
