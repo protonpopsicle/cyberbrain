@@ -106,6 +106,24 @@ The archive (`$DATA_DIR/archive.md`) stores completed tasks pruned from `threads
 
 When the user asks to see archived/completed tasks (e.g., "what did I do last month?", "show archive"), read `archive.md` and present it using the tree view format, scoped by time or thread as requested.
 
+### Recent Wins
+
+When the user asks for "recent wins", "recent completions", or "what did I finish lately", show all completed tasks that are *inside* the 14-day archive window (i.e., completed within the last 14 days) as a Markdown table:
+
+```
+| Task | Thread | Completed | Days ago |
+|------|--------|-----------|----------|
+| Complete MFA setup for Mac | Compliance | 2026-05-12 | 9 |
+| Replace Copilot workflows with Pi | Learning | 2026-05-11 | 10 |
+```
+
+**Rules:**
+- Include both top-level tasks and sub-tasks (sub-tasks shown with their own description, not the parent's).
+- Sort by completion date descending (most recent first).
+- "Thread" column shows the `##` heading the task lives under.
+- "Days ago" is relative to today.
+- End with a count line: `N wins in the last 14 days`.
+
 ## Notes Directory
 
 The `$DATA_DIR/notes/` folder stores reference docs (meeting notes, research, analysis). When the user asks to save a note:
