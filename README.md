@@ -1,13 +1,15 @@
 # cyberbrain
 
-A [Pi](https://github.com/mariozechner/pi) coding agent skill for personal task tracking organized by strategic work threads.
+A standards-compliant coding agent skill for personal task tracking organized by strategic work threads.
+
+It works with any agent that supports the skill format. I use it with [Pi](https://github.com/mariozechner/pi), which is an excellent agent and the primary example here.
 
 > *"Your effort to remain what you are is what limits you."*
 > — Puppet Master
 
 ## What It Does
 
-Cyberbrain turns a simple Markdown file into a personal task system driven by natural language. You talk to the agent; it manages the file.
+Cyberbrain turns a simple Markdown file into a personal task system driven by natural language. You talk to your agent; it manages the file.
 
 - **Threads** — Group tasks under strategic areas of focus
 - **Tasks & sub-tasks** — Checkbox items with one level of nesting
@@ -20,7 +22,7 @@ Cyberbrain turns a simple Markdown file into a personal task system driven by na
 
 ## Installation
 
-1. Clone this repo and symlink into Pi's skill directory:
+1. Clone this repo and install it into your agent’s standard skill directory, or symlink it there:
 
 ```bash
 git clone git@github.com:protonpopsicle/cyberbrain.git ~/cyberbrain
@@ -52,9 +54,7 @@ echo "$HOME/Dropbox/cyberbrain" > ~/.config/cyberbrain
 
 ## Usage
 
-Talk to Pi naturally. The skill activates when it recognizes task-management intent.
-
-*Examples below are from the fictional universe of [Ghost in the Shell](https://en.wikipedia.org/wiki/Ghost_in_the_Shell). Your threads will be whatever you need them to be.*
+Talk to your agent naturally. The skill activates when it recognizes task-management intent.
 
 ### Managing Tasks
 
@@ -122,8 +122,7 @@ This skill performs structured Markdown editing — not creative reasoning. Lowe
 | **Claude Sonnet 4** | ✅ Recommended | Best cost/performance. Handles all operations reliably. |
 | Claude Opus 4 | Works, overkill | Like deploying a Fuchikoma for a stakeout. |
 | Claude Haiku 4 | Risky | May misparse edge cases in archive or complex edits. |
-| **GPT-4o** | ✅ Good | Comparable to Sonnet for structured file editing. |
-| GPT-4o-mini | Risky | Fine for simple ops, fragile for archive. |
+| **GPT-5 mini** | ✅ Good | Comparable to Sonnet for structured file editing. |
 
 The included helper scripts (`scripts/`) handle read-only operations (summary, recent wins, archive) so the LLM doesn't need to parse the file — it runs a script and relays the output.
 
