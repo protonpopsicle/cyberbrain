@@ -62,6 +62,16 @@ Talk to your agent naturally. The skill activates when it recognizes task-manage
 "Recent wins"                    → table of completions in the last 14 days
 ```
 
+### Web Dashboard
+
+Cyberbrain includes a small local-only dashboard for browsing your threads in a browser:
+
+```bash
+python3 scripts/web.py
+```
+
+It reads the same `~/.config/cyberbrain` data directory, serves only on `127.0.0.1`, and opens your browser automatically. Use `--daemon` to start it in the background or `--no-open` to suppress browser launch.
+
 ### Archiving
 
 ```
@@ -90,6 +100,9 @@ This skill performs structured Markdown editing — not creative reasoning. Lowe
         recent-wins.sh           ← outputs recent completions table
         summary.sh               ← outputs tree view
         archive.sh               ← moves old tasks to archive.md
+        web.py                   ← local browser dashboard
+    dashboard/
+        index.html               ← dashboard UI
 
 ~/.config/cyberbrain             ← points to data directory
 
