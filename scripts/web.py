@@ -10,21 +10,29 @@ import time
 import urllib.request
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from socketserver import TCPServer
 from pathlib import Path
+from socketserver import TCPServer
 from urllib.parse import unquote, urlparse
 
 
 ROOT = Path(__file__).resolve().parents[1]
+DASHBOARD = ROOT / "dashboard" / "index.html"
 CONFIG = Path.home() / ".config" / "cyberbrain"
+DEFAULT_PORT = 8765
+PORT_SEARCH_LIMIT = 100
+STARTUP_CHECKS = 20
+STARTUP_CHECK_INTERVAL = 0.1
+
 TASK_RE = re.compile(r"^(?P<indent> *)(?:- \[(?P<done>[ xX])\] )(?P<text>.*)$")
 DONE_DATE_RE = re.compile(r"^(?P<text>.*?)(?:\s+✓\s+(?P<date>\d{4}-\d{2}-\d{2}))?$")
 LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+URL_SCHEME_RE = re.compile(r"^[a-z]+://")
 
 
-def data_dir():
+def load_data_dir():
     if not CONFIG.exists():
         raise RuntimeError(f"Missing config: {CONFIG}")
+
     path = Path(CONFIG.read_text(encoding="utf-8").strip()).expanduser()
     if not path.exists():
         raise RuntimeError(f"Configured data directory does not exist: {path}")
@@ -39,8 +47,9 @@ def split_done_date(text):
 
 
 def source_hint(url):
-    if url.startswith("./") or url.startswith("../") or not re.match(r"^[a-z]+://", url):
+    if url.startswith(("./", "../")) or not URL_SCHEME_RE.match(url):
         return "local"
+
     host = urlparse(url).netloc.lower()
     if "github" in host:
         return "GitHub"
@@ -52,63 +61,86 @@ def source_hint(url):
 
 
 def parse_note(text):
-    links = [{"label": label, "url": url, "source": source_hint(url)} for label, url in LINK_RE.findall(text)]
-    return {"text": text, "links": links}
+    return {
+        "text": text,
+        "links": [
+            {"label": label, "url": url, "source": source_hint(url)}
+            for label, url in LINK_RE.findall(text)
+        ],
+    }
+
+
+def parse_task(match):
+    text, date = split_done_date(match.group("text").strip())
+    return {
+        "text": text,
+        "done": match.group("done").lower() == "x",
+        "date": date,
+        "notes": [],
+        "children": [],
+    }
+
+
+def count_tasks(tasks):
+    open_count = 0
+    done_count = 0
+
+    for task in tasks:
+        items = [task] + task["children"]
+        open_count += sum(1 for item in items if not item["done"])
+        done_count += sum(1 for item in items if item["done"])
+
+    return {"open": open_count, "done": done_count}
 
 
 def parse_threads(markdown):
     threads = []
-    current = None
+    current_thread = None
     current_task = None
 
     for raw in markdown.splitlines():
         line = raw.rstrip()
+
         if line.startswith("## "):
-            current = {"name": line[3:].strip(), "summary": "", "tasks": []}
-            threads.append(current)
+            current_thread = {"name": line[3:].strip(), "summary": "", "tasks": []}
+            threads.append(current_thread)
             current_task = None
             continue
-        if not current:
-            continue
-        if line.startswith("Summary:"):
-            current["summary"] = line[len("Summary:") :].strip()
+
+        if not current_thread:
             continue
 
-        task = TASK_RE.match(line)
-        if task:
-            indent = len(task.group("indent"))
-            text, date = split_done_date(task.group("text").strip())
-            item = {
-                "text": text,
-                "done": task.group("done").lower() == "x",
-                "date": date,
-                "notes": [],
-                "children": [],
-            }
+        if line.startswith("Summary:"):
+            current_thread["summary"] = line[len("Summary:") :].strip()
+            continue
+
+        task_match = TASK_RE.match(line)
+        if task_match:
+            task = parse_task(task_match)
+            indent = len(task_match.group("indent"))
+
             if indent == 0:
-                current["tasks"].append(item)
-                current_task = item
+                current_thread["tasks"].append(task)
+                current_task = task
             elif indent == 2 and current_task:
-                current_task["children"].append(item)
+                current_task["children"].append(task)
             continue
 
         if line.startswith("  - ") and current_task:
             current_task["notes"].append(parse_note(line[4:].strip()))
 
-    open_count = 0
-    done_count = 0
+    total_open = 0
+    total_done = 0
     for thread in threads:
-        thread_open = 0
-        thread_done = 0
-        for task in thread["tasks"]:
-            items = [task] + task["children"]
-            thread_open += sum(1 for item in items if not item["done"])
-            thread_done += sum(1 for item in items if item["done"])
-        thread["counts"] = {"open": thread_open, "done": thread_done}
-        open_count += thread_open
-        done_count += thread_done
+        thread_counts = count_tasks(thread["tasks"])
+        thread["counts"] = thread_counts
+        total_open += thread_counts["open"]
+        total_done += thread_counts["done"]
 
-    return {"threads": threads, "counts": {"threads": len(threads), "open": open_count, "done": done_count}}
+    return {
+        "threads": threads,
+        "counts": {"threads": len(threads), "open": total_open, "done": total_done},
+    }
 
 
 def is_free(port):
@@ -117,11 +149,9 @@ def is_free(port):
 
 
 def find_port(start):
-    port = start
-    while port < start + 100:
+    for port in range(start, start + PORT_SEARCH_LIMIT):
         if is_free(port):
             return port
-        port += 1
     raise RuntimeError("No free local port found")
 
 
@@ -136,18 +166,21 @@ def api_ready(port):
 def launch_daemon(port, open_browser):
     port = find_port(port)
     log_path = Path(os.environ.get("TMPDIR", "/tmp")) / "cyberbrain-web.log"
-    log = log_path.open("ab")
-    subprocess.Popen(
-        [sys.executable, str(Path(__file__).resolve()), "--port", str(port), "--no-open"],
-        stdin=subprocess.DEVNULL,
-        stdout=log,
-        stderr=log,
-        start_new_session=True,
-    )
-    for _ in range(20):
+
+    with log_path.open("ab") as log:
+        subprocess.Popen(
+            [sys.executable, str(Path(__file__).resolve()), "--port", str(port), "--no-open"],
+            stdin=subprocess.DEVNULL,
+            stdout=log,
+            stderr=log,
+            start_new_session=True,
+        )
+
+    for _ in range(STARTUP_CHECKS):
         if api_ready(port):
             break
-        time.sleep(0.1)
+        time.sleep(STARTUP_CHECK_INTERVAL)
+
     url = f"http://127.0.0.1:{port}/"
     if open_browser:
         webbrowser.open(url)
@@ -158,7 +191,7 @@ def launch_daemon(port, open_browser):
 class Handler(BaseHTTPRequestHandler):
     server_version = "CyberbrainWeb/1.0"
 
-    def send(self, status, body, content_type):
+    def write_response(self, status, body, content_type):
         data = body if isinstance(body, bytes) else body.encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", content_type)
@@ -167,31 +200,52 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def text_response(self, status, body, content_type="text/plain"):
+        self.write_response(status, body, f"{content_type}; charset=utf-8")
+
+    def json_response(self, body):
+        self.write_response(200, json.dumps(body), "application/json; charset=utf-8")
+
     def do_GET(self):
         parsed = urlparse(self.path)
         try:
-            if parsed.path in ("/", "/index.html"):
-                self.send(200, (ROOT / "dashboard" / "index.html").read_text(encoding="utf-8"), "text/html; charset=utf-8")
-            elif parsed.path == "/api/threads":
-                md = (self.server.data_dir / "threads.md").read_text(encoding="utf-8")
-                self.send(200, json.dumps(parse_threads(md)), "application/json; charset=utf-8")
-            elif parsed.path == "/threads.md":
-                self.send(200, (self.server.data_dir / "threads.md").read_text(encoding="utf-8"), "text/markdown; charset=utf-8")
-            elif parsed.path.startswith("/notes/"):
-                self.serve_note(parsed.path)
-            else:
-                self.send(404, "Not found", "text/plain; charset=utf-8")
+            self.route(parsed.path)
         except Exception as exc:
-            self.send(500, str(exc), "text/plain; charset=utf-8")
+            self.text_response(500, str(exc))
+
+    def route(self, path):
+        if path in ("/", "/index.html"):
+            self.text_response(200, DASHBOARD.read_text(encoding="utf-8"), "text/html")
+            return
+
+        if path == "/api/threads":
+            markdown = self.read_data_file("threads.md")
+            self.json_response(parse_threads(markdown))
+            return
+
+        if path == "/threads.md":
+            self.text_response(200, self.read_data_file("threads.md"), "text/markdown")
+            return
+
+        if path.startswith("/notes/"):
+            self.serve_note(path)
+            return
+
+        self.text_response(404, "Not found")
+
+    def read_data_file(self, name):
+        return (self.server.data_dir / name).read_text(encoding="utf-8")
 
     def serve_note(self, path):
         name = unquote(path.removeprefix("/notes/"))
-        target = (self.server.data_dir / "notes" / name).resolve()
-        notes = (self.server.data_dir / "notes").resolve()
-        if notes not in target.parents or not target.is_file():
-            self.send(404, "Not found", "text/plain; charset=utf-8")
+        notes_dir = (self.server.data_dir / "notes").resolve()
+        target = (notes_dir / name).resolve()
+
+        if notes_dir not in target.parents or not target.is_file():
+            self.text_response(404, "Not found")
             return
-        self.send(200, target.read_text(encoding="utf-8"), "text/markdown; charset=utf-8")
+
+        self.text_response(200, target.read_text(encoding="utf-8"), "text/markdown")
 
     def log_message(self, fmt, *args):
         return
@@ -204,12 +258,16 @@ class LocalServer(ThreadingHTTPServer):
         self.server_port = self.server_address[1]
 
 
-def main():
+def build_parser():
     parser = argparse.ArgumentParser(description="Serve the Cyberbrain dashboard")
-    parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     parser.add_argument("--no-open", action="store_true")
     parser.add_argument("--daemon", action="store_true")
-    args = parser.parse_args()
+    return parser
+
+
+def main():
+    args = build_parser().parse_args()
 
     if args.daemon:
         launch_daemon(args.port, not args.no_open)
@@ -217,11 +275,13 @@ def main():
 
     port = find_port(args.port)
     server = LocalServer(("127.0.0.1", port), Handler)
-    server.data_dir = data_dir()
+    server.data_dir = load_data_dir()
+
     url = f"http://127.0.0.1:{port}/"
     print(f"Cyberbrain dashboard: {url}", flush=True)
     if not args.no_open:
         webbrowser.open(url)
+
     try:
         server.serve_forever()
     except KeyboardInterrupt:
